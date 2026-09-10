@@ -1,4 +1,4 @@
-const VERSION='0.1.3';
+const VERSION='0.1.4';
 const CACHE=`schedule-plus-v${VERSION}`;
 const CORE=['./','./index.html','./styles.css','./app.js','./supabase.js','./version.js','./manifest.webmanifest','./assets/powerup-logo.png','./assets/icons/icon.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>`${u}${u.includes('?')?'&':'?'}v=${VERSION}`))))});
