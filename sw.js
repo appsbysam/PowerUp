@@ -1,4 +1,4 @@
-const VERSION='0.3.0';
+const VERSION='0.4.0';
 const CACHE=`schedule-plus-v${VERSION}`;
 const CORE=['./','./index.html','./styles.css','./app.js','./supabase.js','./version.js','./manifest.webmanifest','./assets/powerup-logo.png','./assets/icons/icon.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>`${u}${u.includes('?')?'&':'?'}v=${VERSION}`))))});
@@ -9,10 +9,7 @@ self.addEventListener('fetch',e=>{
   if(url.origin!==self.location.origin)return;
   e.respondWith(
     fetch(e.request,{cache:'no-store'})
-      .then(r=>{
-        if(r&&r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}
-        return r;
-      })
+      .then(r=>{if(r&&r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r})
       .catch(()=>caches.match(e.request).then(r=>r||caches.match(`./index.html?v=${VERSION}`)||caches.match('./index.html')))
   );
 });
