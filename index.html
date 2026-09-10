@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="PowerUp job organiser for electricians.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/powerup-logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>PowerUp</title>
+</head>
+<body>
+  <div id="authView" class="auth-shell">
+    <div class="auth-card">
+      <img class="auth-logo" src="assets/powerup-logo.png" alt="PowerUp logo">
+      <h1>PowerUp</h1>
+      <p>Simple job planning for busy electricians.</p>
+      <form id="authForm">
+        <label>Email<input id="email" type="email" autocomplete="email" required></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" minlength="6" required></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <button id="signUpBtn" class="secondary" type="button">Create account</button>
+      <p id="authMessage" class="message"></p>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand"><img src="assets/powerup-logo.png" alt=""><strong>PowerUp</strong></div>
+      <button id="signOutBtn" class="ghost">Sign out</button>
+    </header>
+
+    <main>
+      <section class="hero-row">
+        <div><p class="eyebrow">JOB ORGANISER</p><h1 id="greeting">Today</h1></div>
+        <button id="newJobBtn" class="primary">+ New job</button>
+      </section>
+
+      <section class="stats" aria-label="Job summary">
+        <button class="stat active" data-filter="all"><span id="countAll">0</span><small>All</small></button>
+        <button class="stat" data-filter="today"><span id="countToday">0</span><small>Today</small></button>
+        <button class="stat" data-filter="unscheduled"><span id="countUnscheduled">0</span><small>Unscheduled</small></button>
+        <button class="stat" data-filter="completed"><span id="countCompleted">0</span><small>Completed</small></button>
+      </section>
+
+      <section class="toolbar">
+        <input id="searchInput" type="search" placeholder="Search customer, suburb or job…">
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option value="new">New</option><option value="to_schedule">To schedule</option>
+          <option value="scheduled">Scheduled</option><option value="in_progress">In progress</option>
+          <option value="waiting">Waiting / follow-up</option><option value="completed">Completed</option>
+        </select>
+      </section>
+
+      <section id="jobsList" class="jobs-list"></section>
+    </main>
+
+    <dialog id="jobDialog">
+      <form id="jobForm" method="dialog">
+        <div class="dialog-head"><h2 id="jobDialogTitle">New job</h2><button id="closeJobBtn" class="ghost" type="button">✕</button></div>
+        <input id="jobId" type="hidden">
+        <label>Job title *<input id="jobTitle" required placeholder="e.g. Install downlights"></label>
+        <div class="grid2"><label>Customer<input id="customerName"></label><label>Phone<input id="customerPhone" type="tel"></label></div>
+        <label>Address<input id="addressLine" autocomplete="street-address"></label>
+        <div class="grid2"><label>Suburb<input id="suburb"></label><label>Postcode<input id="postcode" inputmode="numeric"></label></div>
+        <label>Job description<textarea id="description" rows="3"></textarea></label>
+        <label>Notes<textarea id="notes" rows="3"></textarea></label>
+        <div class="grid2"><label>Status<select id="status"><option value="new">New</option><option value="to_schedule">To schedule</option><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="waiting">Waiting / follow-up</option><option value="completed">Completed</option></select></label><label>Priority<select id="priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label></div>
+        <div class="grid3"><label>Date<input id="scheduledDate" type="date"></label><label>Start<input id="scheduledStart" type="time"></label><label>Duration (min)<input id="estimatedMinutes" type="number" min="1" step="15"></label></div>
+        <div class="dialog-actions"><button id="deleteJobBtn" class="danger hidden" type="button">Delete</button><button class="primary" type="submit">Save job</button></div>
+      </form>
+    </dialog>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="version.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
