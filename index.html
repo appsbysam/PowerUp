@@ -12,6 +12,20 @@
   <title>PowerUp</title>
 </head>
 <body>
+  <div id="pinView" class="auth-shell hidden">
+    <div class="auth-card pin-card">
+      <img class="auth-logo" src="assets/powerup-logo.png" alt="PowerUp logo">
+      <h1>PowerUp</h1>
+      <p>Enter your 4-digit PIN</p>
+      <form id="pinUnlockForm">
+        <label>PIN<input id="pinUnlock" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+        <button type="submit">Unlock</button>
+      </form>
+      <button id="usePasswordBtn" class="secondary" type="button">Use email & password</button>
+      <p id="pinMessage" class="message"></p>
+    </div>
+  </div>
+
   <div id="authView" class="auth-shell">
     <div class="auth-card">
       <img class="auth-logo" src="assets/powerup-logo.png" alt="PowerUp logo">
@@ -23,6 +37,7 @@
         <button type="submit">Sign in</button>
       </form>
       <button id="signUpBtn" class="secondary" type="button">Create account</button>
+      <button id="resendBtn" class="link-button" type="button">Resend confirmation email</button>
       <p id="authMessage" class="message"></p>
     </div>
   </div>
@@ -30,7 +45,7 @@
   <div id="appView" class="app-shell hidden">
     <header class="topbar">
       <div class="brand"><img src="assets/powerup-logo.png" alt=""><strong>PowerUp</strong></div>
-      <button id="signOutBtn" class="ghost">Sign out</button>
+      <div class="top-actions"><button id="pinSettingsBtn" class="ghost">PIN</button><button id="signOutBtn" class="ghost">Sign out</button></div>
     </header>
 
     <main>
@@ -58,6 +73,17 @@
 
       <section id="jobsList" class="jobs-list"></section>
     </main>
+
+    <dialog id="pinDialog">
+      <form id="pinSetupForm" method="dialog">
+        <div class="dialog-head"><h2>PIN access</h2><button id="closePinBtn" class="ghost" type="button">✕</button></div>
+        <p class="muted">Set a 4-digit PIN for quick access on this device. Your normal Supabase login remains the secure account login.</p>
+        <label>New 4-digit PIN<input id="newPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+        <label>Confirm PIN<input id="confirmPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+        <div class="dialog-actions"><button id="removePinBtn" class="danger" type="button">Remove PIN</button><button class="primary" type="submit">Save PIN</button></div>
+        <p id="pinSetupMessage" class="message"></p>
+      </form>
+    </dialog>
 
     <dialog id="jobDialog">
       <form id="jobForm" method="dialog">
