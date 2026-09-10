@@ -1,4 +1,4 @@
-const APP_VERSION='0.4.13';
+const APP_VERSION='0.5.0';
 console.info(`Schedule+ v${APP_VERSION}`);
 
 (() => {
@@ -14,6 +14,21 @@ console.info(`Schedule+ v${APP_VERSION}`);
   }
   const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
   if (appleIcon) appleIcon.href = `assets/powerup-logo.png?v=${APP_VERSION}`;
+
+  if (!document.querySelector('link[data-schedule-business-styles]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `business.css?v=${APP_VERSION}`;
+    link.dataset.scheduleBusinessStyles = 'true';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-schedule-business]')) {
+    const script = document.createElement('script');
+    script.src = `business.js?v=${APP_VERSION}`;
+    script.async = false;
+    script.dataset.scheduleBusiness = 'true';
+    document.head.appendChild(script);
+  }
 
   const style = document.createElement('style');
   style.textContent = `
@@ -77,6 +92,6 @@ console.info(`Schedule+ v${APP_VERSION}`);
     }
 
     const notes = document.querySelector('#updateModal .update-notes');
-    if (notes) notes.innerHTML = '<li>Installed app branding now uses the PowerUp logo instead of the lightning-bolt placeholder icon.</li><li>The browser favicon and Apple touch icon now use the same PowerUp branding.</li><li>Login and PIN screens remain fixed to the phone screen, pinch-to-zoom remains disabled, and the PIN re-lock behaviour is unchanged.</li><li>The Notifications option remains available in User profile for later functionality.</li>';
+    if (notes) notes.innerHTML = '<li>Schedule+ now has a multi-business foundation, with each business securely separated in the shared Supabase database.</li><li>Business owners and admins can edit the business name, contact details, logo and primary/secondary colours from Business settings.</li><li>New users with no business workspace are guided through a simple Create business setup.</li><li>Business logos are stored in a dedicated Supabase Storage bucket with business-level access rules.</li><li>PowerUp Group remains the first live business on the new shared Schedule+ structure.</li>';
   });
 })();
