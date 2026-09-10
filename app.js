@@ -1,10 +1,10 @@
 const $ = s => document.querySelector(s);
-let jobs = [], currentUser = null, quickFilter = 'all', pinUnlocked = false;
+let jobs = [], currentUser = null, quickFilter = 'all', typeFilter = 'all', pinUnlocked = false;
 let calendarCursor = new Date();
 calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), 1, 12);
 
 const AUTH_REDIRECT_URL = 'https://appsbysam.github.io/PowerUp/';
-const APP_SW_VERSION = '0.3.0';
+const APP_SW_VERSION = '0.4.0';
 
 const authView = $('#authView');
 const pinView = $('#pinView');
@@ -31,20 +31,29 @@ function localDate(d = new Date()) {
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-function addDays(d, n) {
-  const x = new Date(`${d}T12:00:00`);
-  x.setDate(x.getDate() + n);
-  return localDate(x);
-}
-function formatDay(d) {
-  return new Intl.DateTimeFormat('en-AU', {weekday:'short',day:'numeric',month:'short'}).format(new Date(`${d}T12:00:00`));
-}
 function formatLongDate(d) {
   return new Intl.DateTimeFormat('en-AU', {weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(`${d}T12:00:00`));
 }
-function suburbFromAddress(a = '') {
-  const p = a.split(',').map(x => x.trim()).filter(Boolean);
-  return p.length >= 2 ? p[p.length - 2].replace(/\b(?:NSW|VIC|QLD|SA|WA|TAS|ACT|NT)\s*\d{4}\b/i, '').trim() : '';
+function extractAddressParts(address = '') {
+  const a = address.trim();
+  if (!a) return {suburb:null, postcode:null};
+  const m = a.match(/(?:^|,\s*)([^,]+?)\s+(NSW|VIC|QLD|SA|WA|TAS|ACT|NT)\s+(\d{4})\s*$/i);
+  if (m) return {suburb:m[1].trim(), postcode:m[3]};
+  const parts = a.split(',').map(x => x.trim()).filter(Boolean);
+  return {suburb:parts.length >= 2 ? parts[parts.length - 1] : null, postcode:(a.match(/\b\d{4}\b/) || [])[0] || null};
+}
+function suburbFromAddress(address = '') {
+  return extractAddressParts(address).suburb || '';
+}
+function parseNumberOrNull(value) {
+  const s = String(value ?? '').trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function displayNumber(value, suffix = '') {
+  if (value === null || value === undefined || value === '') return '';
+  return `${Number(value)}${suffix}`;
 }
 
 async function init() {
@@ -202,10 +211,12 @@ function filtered() {
   const q = $('#searchInput').value.toLowerCase().trim(), status = $('#statusFilter').value;
   return jobs.filter(j => {
     if (status && j.status !== status) return false;
+    if (typeFilter !== 'all' && j.title !== typeFilter) return false;
     if (quickFilter === 'scheduled' && (!j.scheduled_date || j.status === 'waiting')) return false;
     if (quickFilter === 'unscheduled' && j.scheduled_date) return false;
     if (quickFilter === 'followup' && j.status !== 'waiting') return false;
-    if (q && !`${j.title} ${j.customer_name} ${j.suburb || ''} ${j.address_line || ''} ${j.description || ''}`.toLowerCase().includes(q)) return false;
+    const searchText = `${j.title} ${j.customer_name} ${j.customer_phone || ''} ${j.suburb || ''} ${j.address_line || ''} ${j.description || ''} ${j.panel_brand || ''} ${j.panel_type || ''} ${j.battery_brand || ''} ${j.battery_type || ''} ${j.inverter_brand || ''} ${j.inverter_type || ''} ${j.work_involved || ''}`.toLowerCase();
+    if (q && !searchText.includes(q)) return false;
     return true;
   });
 }
@@ -214,6 +225,41 @@ function durationLabel(minutes) {
   if (!minutes) return '';
   const h = minutes / 60;
   return `${Number.isInteger(h) ? h.toFixed(1) : h} hr${h === 1 ? '' : 's'}`;
+}
+
+function systemDetailsHtml(j) {
+  const details = [];
+  const panels = [j.panel_quantity ? `${j.panel_quantity} ×` : '', j.panel_brand, j.panel_type].filter(Boolean).join(' ');
+  if (panels) details.push(['Panels', panels]);
+  if (j.solar_capacity_kw != null) details.push(['Solar size', displayNumber(j.solar_capacity_kw, ' kW')]);
+  const battery = [j.battery_brand, j.battery_type, j.battery_capacity_kwh != null ? displayNumber(j.battery_capacity_kwh, ' kWh') : ''].filter(Boolean).join(' · ');
+  if (battery) details.push(['Battery', battery]);
+  if (j.phase_type) details.push(['Phase', j.phase_type]);
+  const inverter = [j.inverter_brand, j.inverter_type, j.inverter_capacity_kw != null ? displayNumber(j.inverter_capacity_kw, ' kW') : ''].filter(Boolean).join(' · ');
+  if (inverter) details.push(['Inverter', inverter]);
+  if (j.work_involved) details.push(['Work involved', j.work_involved]);
+  if (!details.length) return '';
+  return `<div class="system-details">${details.map(([label,value]) => `<div class="system-detail"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}</div>`;
+}
+
+function jobCardHtml(j) {
+  const address = j.address_line || [j.suburb, j.postcode].filter(Boolean).join(' ') || 'Address not set';
+  const phone = j.customer_phone ? `<a class="job-phone" href="tel:${esc(j.customer_phone.replace(/\s+/g,''))}">${esc(j.customer_phone)}</a>` : '<span class="job-phone missing">No phone</span>';
+  return `<div class="swipe-row" data-id="${j.id}">
+    <button class="swipe-delete swipe-delete-left" type="button" aria-label="Delete ${esc(j.customer_name || 'job')}">Delete</button>
+    <article class="job-card" data-id="${j.id}">
+      <div class="job-customer-row">
+        <div class="job-customer"><strong>${esc(j.customer_name || 'No customer')}</strong>${phone}</div>
+        <span class="chip status-chip">${esc(labelStatus(j.status))}</span>
+      </div>
+      <div class="job-address">${esc(address)}</div>
+      <div class="job-type-line"><span class="job-type-chip">${esc(j.title)}</span></div>
+      <div class="job-description">${esc(j.description || 'No job description')}</div>
+      ${systemDetailsHtml(j)}
+      <div class="chips">${j.scheduled_date ? `<span class="chip">📅 ${esc(j.scheduled_date)}${j.scheduled_start ? ` ${esc(j.scheduled_start.slice(0,5))}` : ''}</span>` : '<span class="chip">Unscheduled</span>'}${j.priority !== 'normal' ? `<span class="chip">${esc(j.priority)}</span>` : ''}${j.estimated_minutes ? `<span class="chip">⏱ ${durationLabel(j.estimated_minutes)}</span>` : ''}</div>
+    </article>
+    <button class="swipe-delete swipe-delete-right" type="button" aria-label="Delete ${esc(j.customer_name || 'job')}">Delete</button>
+  </div>`;
 }
 
 function render() {
@@ -225,9 +271,94 @@ function render() {
   $('#countUnscheduled').textContent = unscheduled;
   $('#countFollowup').textContent = followup;
   const rows = filtered();
-  jobsList.innerHTML = rows.length ? rows.map(j => `<article class="job-card" data-id="${j.id}"><div class="job-top"><div><div class="job-title">${esc(j.title)}</div><div class="muted">${esc(j.customer_name || 'No customer')}${j.suburb ? ` · ${esc(j.suburb)}` : j.address_line ? ` · ${esc(suburbFromAddress(j.address_line))}` : ''}</div></div><span class="chip">${esc(labelStatus(j.status))}</span></div><div class="chips">${j.scheduled_date ? `<span class="chip">📅 ${esc(j.scheduled_date)}${j.scheduled_start ? ` ${esc(j.scheduled_start.slice(0,5))}` : ''}</span>` : '<span class="chip">Unscheduled</span>'}${j.priority !== 'normal' ? `<span class="chip">${esc(j.priority)}</span>` : ''}${j.estimated_minutes ? `<span class="chip">⏱ ${durationLabel(j.estimated_minutes)}</span>` : ''}</div></article>`).join('') : '<div class="empty">No jobs here yet.</div>';
-  document.querySelectorAll('.job-card').forEach(c => c.onclick = () => openJob(jobs.find(j => j.id === c.dataset.id)));
+  jobsList.innerHTML = rows.length ? rows.map(jobCardHtml).join('') : '<div class="empty">No jobs here yet.</div>';
+  bindSwipeRows();
 }
+
+function closeAllSwipes(except = null) {
+  document.querySelectorAll('.swipe-row.swipe-open').forEach(row => {
+    if (row !== except) resetSwipe(row);
+  });
+}
+function resetSwipe(row) {
+  row.classList.remove('swipe-open','reveal-left','reveal-right');
+  const card = row.querySelector('.job-card');
+  if (card) card.style.transform = '';
+}
+function setSwipe(row, side) {
+  closeAllSwipes(row);
+  row.classList.add('swipe-open', side === 'left' ? 'reveal-left' : 'reveal-right');
+  row.classList.remove(side === 'left' ? 'reveal-right' : 'reveal-left');
+  const card = row.querySelector('.job-card');
+  if (card) card.style.transform = `translateX(${side === 'left' ? 86 : -86}px)`;
+}
+async function deleteJobFromDashboard(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job || !confirm(`Delete ${job.customer_name || 'this job'}?`)) return;
+  const {error} = await supabaseClient.from('jobs').delete().eq('id', id);
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  await loadJobs();
+}
+function bindSwipeRows() {
+  document.querySelectorAll('.swipe-row').forEach(row => {
+    const card = row.querySelector('.job-card');
+    const id = row.dataset.id;
+    row.querySelectorAll('.swipe-delete').forEach(btn => btn.onclick = e => {
+      e.stopPropagation();
+      deleteJobFromDashboard(id);
+    });
+    card.querySelectorAll('a,button').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+
+    let startX = 0, startY = 0, dx = 0, dragging = false, moved = false;
+    card.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      dx = 0;
+      moved = false;
+      dragging = true;
+      card.classList.add('dragging');
+      try { card.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    card.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const x = e.clientX - startX, y = e.clientY - startY;
+      if (Math.abs(y) > Math.abs(x) && Math.abs(y) > 10) {
+        dragging = false;
+        card.classList.remove('dragging');
+        resetSwipe(row);
+        return;
+      }
+      if (Math.abs(x) > 6) moved = true;
+      dx = Math.max(-96, Math.min(96, x));
+      card.style.transform = `translateX(${dx}px)`;
+    });
+    card.addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      card.classList.remove('dragging');
+      if (Math.abs(dx) >= 42) {
+        setSwipe(row, dx > 0 ? 'left' : 'right');
+        return;
+      }
+      const wasOpen = row.classList.contains('swipe-open');
+      resetSwipe(row);
+      if (!moved && !wasOpen) openJob(jobs.find(j => j.id === id));
+    });
+    card.addEventListener('pointercancel', () => {
+      dragging = false;
+      card.classList.remove('dragging');
+      resetSwipe(row);
+    });
+  });
+}
+
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('.swipe-row')) closeAllSwipes();
+});
 
 function jobsForDate(date) {
   return jobs.filter(j => j.scheduled_date === date).sort((a,b) => (a.scheduled_start || '99:99').localeCompare(b.scheduled_start || '99:99'));
@@ -301,6 +432,12 @@ document.querySelectorAll('.stat').forEach(b => b.onclick = () => {
   quickFilter = b.dataset.filter;
   render();
 });
+document.querySelectorAll('.type-filter').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.type-filter').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  typeFilter = b.dataset.type;
+  render();
+});
 
 function openJob(j = null, defaultDate = null) {
   $('#jobForm').reset();
@@ -313,6 +450,18 @@ function openJob(j = null, defaultDate = null) {
     $('#customerPhone').value = j.customer_phone || '';
     $('#addressLine').value = j.address_line || '';
     $('#description').value = j.description || '';
+    $('#panelBrand').value = j.panel_brand || '';
+    $('#panelType').value = j.panel_type || '';
+    $('#panelQuantity').value = j.panel_quantity ?? '';
+    $('#solarCapacity').value = j.solar_capacity_kw ?? '';
+    $('#batteryBrand').value = j.battery_brand || '';
+    $('#batteryType').value = j.battery_type || '';
+    $('#batteryCapacity').value = j.battery_capacity_kwh ?? '';
+    $('#phaseType').value = j.phase_type || '';
+    $('#inverterBrand').value = j.inverter_brand || '';
+    $('#inverterType').value = j.inverter_type || '';
+    $('#inverterCapacity').value = j.inverter_capacity_kw ?? '';
+    $('#workInvolved').value = j.work_involved || '';
     $('#status').value = j.status || 'new';
     $('#priority').value = j.priority || 'normal';
     $('#scheduledDate').value = j.scheduled_date || '';
@@ -340,17 +489,32 @@ $('#mapsLookupBtn').onclick = () => {
 
 $('#jobForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id = $('#jobId').value, hours = Number($('#estimatedHours').value) || 0, address = $('#addressLine').value.trim();
+  const id = $('#jobId').value;
+  const hours = Number($('#estimatedHours').value) || 0;
+  const address = $('#addressLine').value.trim();
+  const addressParts = extractAddressParts(address);
   const payload = {
     user_id: currentUser.id,
     title: $('#jobTitle').value,
     customer_name: $('#customerName').value.trim() || null,
     customer_phone: $('#customerPhone').value.trim() || null,
     address_line: address || null,
-    suburb: suburbFromAddress(address) || null,
-    postcode: null,
+    suburb: addressParts.suburb,
+    postcode: addressParts.postcode,
     description: $('#description').value.trim() || null,
     notes: null,
+    panel_brand: $('#panelBrand').value.trim() || null,
+    panel_type: $('#panelType').value.trim() || null,
+    panel_quantity: parseNumberOrNull($('#panelQuantity').value),
+    solar_capacity_kw: parseNumberOrNull($('#solarCapacity').value),
+    battery_brand: $('#batteryBrand').value.trim() || null,
+    battery_type: $('#batteryType').value.trim() || null,
+    battery_capacity_kwh: parseNumberOrNull($('#batteryCapacity').value),
+    phase_type: $('#phaseType').value || null,
+    inverter_brand: $('#inverterBrand').value.trim() || null,
+    inverter_type: $('#inverterType').value.trim() || null,
+    inverter_capacity_kw: parseNumberOrNull($('#inverterCapacity').value),
+    work_involved: $('#workInvolved').value.trim() || null,
     status: $('#status').value,
     priority: $('#priority').value,
     scheduled_date: $('#scheduledDate').value || null,
