@@ -5,7 +5,6 @@
   const jobForm = document.getElementById('jobForm');
   if (!sourceInput || !jobForm) return;
 
-  if (lookupButton) lookupButton.hidden = true;
   sourceInput.autocomplete = 'off';
   const wrap = sourceInput.closest('.address-row') || sourceInput.parentElement;
   if (wrap) wrap.classList.add('places-address-wrap');
@@ -26,6 +25,15 @@
     resultsBox.insertAdjacentElement('afterend', hint);
   }
   hint.textContent = 'Start typing an NSW address.';
+
+  let mapChooser = document.getElementById('mapAppChooser');
+  if (!mapChooser) {
+    mapChooser = document.createElement('div');
+    mapChooser.id = 'mapAppChooser';
+    mapChooser.className = 'map-app-chooser hidden';
+    mapChooser.innerHTML = `<div class="map-app-backdrop" data-map-close></div><div class="map-app-sheet" role="dialog" aria-modal="true" aria-labelledby="mapAppChooserTitle"><div class="map-app-head"><strong id="mapAppChooserTitle">View on:</strong><button type="button" class="map-app-close" data-map-close aria-label="Close">✕</button></div><button type="button" data-map-app="waze">Waze</button><button type="button" data-map-app="google">Google Maps</button><button type="button" data-map-app="apple">Apple Maps</button><button type="button" class="map-app-cancel" data-map-close>Cancel</button></div>`;
+    document.body.appendChild(mapChooser);
+  }
 
   function stripAustralia(value = '') { return value.replace(/,?\s*Australia\s*$/i, '').trim(); }
   function component(place, type) { return place.addressComponents?.find(c => c.types?.includes(type)); }
@@ -57,6 +65,46 @@
     resultsBox.classList.add('hidden');
     resultsBox.innerHTML = '';
     activeIndex = -1;
+  }
+  function addressLooksUsable() {
+    const value = sourceInput.value.trim();
+    if (!value || value.length < 5) return false;
+    if (/\b(VIC|QLD|SA|WA|TAS|ACT|NT)\b/i.test(value)) return false;
+    return sourceInput.dataset.mapsValidated === 'true' || /\bNSW\b/i.test(value) || !!document.getElementById('jobId')?.value;
+  }
+  function updateMapButton() {
+    if (!lookupButton) return;
+    const usable = addressLooksUsable();
+    lookupButton.hidden = !usable;
+    lookupButton.disabled = !usable;
+    lookupButton.textContent = 'View on maps';
+  }
+  function closeMapChooser() { mapChooser.classList.add('hidden'); }
+  function openMapChooser() {
+    if (!addressLooksUsable()) return;
+    hideResults();
+    mapChooser.classList.remove('hidden');
+  }
+  function openMapApp(app) {
+    const address = sourceInput.value.trim();
+    if (!address) return;
+    const q = encodeURIComponent(address);
+    const urls = {
+      waze: `https://www.waze.com/ul?q=${q}`,
+      google: `https://www.google.com/maps/search/?api=1&query=${q}`,
+      apple: `https://maps.apple.com/?q=${q}`
+    };
+    const url = urls[app];
+    if (!url) return;
+    closeMapChooser();
+    window.open(url, '_blank', 'noopener');
+  }
+
+  mapChooser.querySelectorAll('[data-map-close]').forEach(el => el.addEventListener('click', closeMapChooser));
+  mapChooser.querySelectorAll('[data-map-app]').forEach(el => el.addEventListener('click', () => openMapApp(el.dataset.mapApp)));
+  if (lookupButton) {
+    lookupButton.hidden = true;
+    lookupButton.onclick = e => { e.preventDefault(); openMapChooser(); };
   }
 
   function installGoogleBootstrap() {
@@ -113,6 +161,7 @@
 
   async function searchAddress() {
     const input = sourceInput.value.trim(), sequence = ++requestSequence;
+    updateMapButton();
     if (input.length < 3) { hideResults(); hint.textContent = 'Start typing an NSW address.'; hint.classList.remove('ok','error'); return; }
     try {
       const places = await ensurePlaces();
@@ -138,13 +187,13 @@
       await place.fetchFields({ fields:['formattedAddress','addressComponents','location'] });
       const state = component(place,'administrative_area_level_1')?.shortText || '';
       const country = component(place,'country')?.shortText || '';
-      if (country !== 'AU' || state !== 'NSW') { clearValidation(); hint.textContent='Please select an address in New South Wales.'; hint.classList.add('error'); hideResults(); return; }
+      if (country !== 'AU' || state !== 'NSW') { clearValidation(); updateMapButton(); hint.textContent='Please select an address in New South Wales.'; hint.classList.add('error'); hideResults(); return; }
       const value = stripAustralia(place.formattedAddress || prediction.text?.toString?.() || '');
       const suburb = component(place,'locality')?.longText || component(place,'postal_town')?.longText || component(place,'sublocality')?.longText || '';
       const postcode = component(place,'postal_code')?.longText || '';
       sourceInput.value=value; sourceInput.dataset.mapsValidated='true'; sourceInput.dataset.mapsState='NSW'; sourceInput.dataset.mapsSuburb=suburb; sourceInput.dataset.mapsPostcode=postcode;
       if (place.location) { sourceInput.dataset.mapsLatitude=String(place.location.lat()); sourceInput.dataset.mapsLongitude=String(place.location.lng()); }
-      hideResults(); hint.textContent='NSW address selected.'; hint.classList.remove('error'); hint.classList.add('ok');
+      hideResults(); hint.textContent='NSW address selected.'; hint.classList.remove('error'); hint.classList.add('ok'); updateMapButton();
       if (placesLibrary?.AutocompleteSessionToken) sessionToken = new placesLibrary.AutocompleteSessionToken();
     } catch (error) {
       console.error('Google address selection failed', error, {name:error?.name, code:error?.code, endpoint:error?.endpoint, message:error?.message});
@@ -156,7 +205,7 @@
     const buttons=[...resultsBox.querySelectorAll('.address-suggestion')]; if(!buttons.length)return;
     activeIndex=(next+buttons.length)%buttons.length; buttons.forEach((btn,i)=>btn.classList.toggle('active',i===activeIndex)); buttons[activeIndex]?.scrollIntoView({block:'nearest'});
   }
-  sourceInput.addEventListener('input',()=>{ clearValidation(); clearTimeout(debounceTimer); debounceTimer=setTimeout(searchAddress,220); });
+  sourceInput.addEventListener('input',()=>{ clearValidation(); updateMapButton(); clearTimeout(debounceTimer); debounceTimer=setTimeout(searchAddress,220); });
   sourceInput.addEventListener('keydown',e=>{
     if(resultsBox.classList.contains('hidden'))return; const count=resultsBox.querySelectorAll('.address-suggestion').length;
     if(e.key==='ArrowDown'&&count){e.preventDefault();updateActiveSuggestion(activeIndex+1);} else if(e.key==='ArrowUp'&&count){e.preventDefault();updateActiveSuggestion(activeIndex<=0?count-1:activeIndex-1);} else if(e.key==='Enter'&&activeIndex>=0){e.preventDefault();selectPrediction(activeIndex);} else if(e.key==='Escape')hideResults();
@@ -167,6 +216,7 @@
     const value=sourceInput.value.trim(), nonNswState=value.match(/\b(VIC|QLD|SA|WA|TAS|ACT|NT)\b/i);
     if(nonNswState||(sourceInput.dataset.mapsState&&sourceInput.dataset.mapsState!=='NSW')){e.preventDefault();e.stopImmediatePropagation();alert('Schedule+ only accepts New South Wales addresses.');sourceInput.focus();}
   },true);
-  window.SchedulePlusAddress={syncFromSource(){clearValidation();hideResults();hint.textContent='Start typing an NSW address.';hint.classList.remove('ok','error');}};
+  window.SchedulePlusAddress={syncFromSource(){clearValidation();hideResults();hint.textContent='Start typing an NSW address.';hint.classList.remove('ok','error');setTimeout(updateMapButton,0);}};
+  updateMapButton();
   ensurePlaces().catch(error=>{console.error('Google Places setup failed',error,{name:error?.name,code:error?.code,endpoint:error?.endpoint,message:error?.message});hint.textContent=`Google address search is unavailable (${errorText(error)}).`;hint.classList.add('error');});
 })();
