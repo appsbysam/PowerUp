@@ -1,6 +1,6 @@
-const VERSION='0.4.13';
+const VERSION='0.5.0';
 const CACHE=`schedule-plus-v${VERSION}`;
-const CORE=['./','./index.html','./styles.css','./maps-autocomplete.css','./ui-enhancements.css','./app.js','./maps-config.js','./maps-autocomplete.js','./ui-enhancements.js','./supabase.js','./version.js','./manifest.webmanifest','./assets/powerup-logo.png'];
+const CORE=['./','./index.html','./styles.css','./maps-autocomplete.css','./ui-enhancements.css','./business.css','./app.js','./maps-config.js','./maps-autocomplete.js','./ui-enhancements.js','./business.js','./supabase.js','./version.js','./manifest.webmanifest','./assets/powerup-logo.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>`${u}${u.includes('?')?'&':'?'}v=${VERSION}`))))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]))});
 self.addEventListener('fetch',e=>{
