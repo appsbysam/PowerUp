@@ -1,2 +1,2 @@
-const APP_VERSION = '0.1.1';
-console.info(`PowerUp v${APP_VERSION}`);
+const APP_VERSION = '0.1.2';
+console.info(`Schedule+ v${APP_VERSION}`);
