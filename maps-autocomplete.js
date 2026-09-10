@@ -28,10 +28,10 @@
 
   let mapChooser = document.getElementById('mapAppChooser');
   if (!mapChooser) {
-    mapChooser = document.createElement('div');
+    mapChooser = document.createElement('dialog');
     mapChooser.id = 'mapAppChooser';
-    mapChooser.className = 'map-app-chooser hidden';
-    mapChooser.innerHTML = `<div class="map-app-backdrop" data-map-close></div><div class="map-app-sheet" role="dialog" aria-modal="true" aria-labelledby="mapAppChooserTitle"><div class="map-app-head"><strong id="mapAppChooserTitle">View on:</strong><button type="button" class="map-app-close" data-map-close aria-label="Close">✕</button></div><button type="button" data-map-app="waze">Waze</button><button type="button" data-map-app="google">Google Maps</button><button type="button" data-map-app="apple">Apple Maps</button><button type="button" class="map-app-cancel" data-map-close>Cancel</button></div>`;
+    mapChooser.className = 'map-app-chooser';
+    mapChooser.innerHTML = `<div class="map-app-sheet" aria-labelledby="mapAppChooserTitle"><div class="map-app-head"><strong id="mapAppChooserTitle">View on:</strong><button type="button" class="map-app-close" data-map-close aria-label="Close">✕</button></div><button type="button" data-map-app="waze">Waze</button><button type="button" data-map-app="google">Google Maps</button><button type="button" data-map-app="apple">Apple Maps</button><button type="button" class="map-app-cancel" data-map-close>Cancel</button></div>`;
     document.body.appendChild(mapChooser);
   }
 
@@ -79,11 +79,13 @@
     lookupButton.disabled = !usable;
     lookupButton.textContent = 'View on maps';
   }
-  function closeMapChooser() { mapChooser.classList.add('hidden'); }
+  function closeMapChooser() {
+    if (mapChooser.open) mapChooser.close();
+  }
   function openMapChooser() {
     if (!addressLooksUsable()) return;
     hideResults();
-    mapChooser.classList.remove('hidden');
+    if (!mapChooser.open) mapChooser.showModal();
   }
   function openMapApp(app) {
     const address = sourceInput.value.trim();
@@ -102,9 +104,12 @@
 
   mapChooser.querySelectorAll('[data-map-close]').forEach(el => el.addEventListener('click', closeMapChooser));
   mapChooser.querySelectorAll('[data-map-app]').forEach(el => el.addEventListener('click', () => openMapApp(el.dataset.mapApp)));
+  mapChooser.addEventListener('click', e => {
+    if (e.target === mapChooser) closeMapChooser();
+  });
   if (lookupButton) {
     lookupButton.hidden = true;
-    lookupButton.onclick = e => { e.preventDefault(); openMapChooser(); };
+    lookupButton.onclick = e => { e.preventDefault(); e.stopPropagation(); openMapChooser(); };
   }
 
   function installGoogleBootstrap() {
