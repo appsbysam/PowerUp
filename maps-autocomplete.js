@@ -27,12 +27,8 @@
   }
   hint.textContent = 'Start typing an NSW address.';
 
-  function stripAustralia(value = '') {
-    return value.replace(/,?\s*Australia\s*$/i, '').trim();
-  }
-  function component(place, type) {
-    return place.addressComponents?.find(c => c.types?.includes(type));
-  }
+  function stripAustralia(value = '') { return value.replace(/,?\s*Australia\s*$/i, '').trim(); }
+  function component(place, type) { return place.addressComponents?.find(c => c.types?.includes(type)); }
   function clearValidation() {
     delete sourceInput.dataset.mapsValidated;
     delete sourceInput.dataset.mapsState;
@@ -41,9 +37,21 @@
     delete sourceInput.dataset.mapsLatitude;
     delete sourceInput.dataset.mapsLongitude;
   }
+  function safeText(value) {
+    return String(value ?? '').replace(/AIza[\w-]+/g, '[key hidden]').replace(/key=[^&\s]+/gi, 'key=[hidden]').slice(0, 260);
+  }
   function errorText(error) {
-    const raw = String(error?.code || error?.message || error?.status || 'unknown error');
-    return raw.replace(/AIza[\w-]+/g, '[key hidden]').slice(0, 180);
+    if (!error) return 'Unknown Google Maps error';
+    const name = safeText(error.name);
+    const endpoint = safeText(error.endpoint);
+    const code = safeText(error.code);
+    const message = safeText(error.message);
+    const parts = [];
+    if (endpoint) parts.push(endpoint);
+    if (code) parts.push(code === '7' ? 'PERMISSION_DENIED (7)' : code);
+    if (message && message !== code && !message.endsWith(`: ${code}`)) parts.push(message);
+    if (!parts.length && name) parts.push(name);
+    return parts.join(' — ') || 'Unknown Google Maps error';
   }
   function hideResults() {
     resultsBox.classList.add('hidden');
@@ -53,22 +61,12 @@
 
   function installGoogleBootstrap() {
     if (window.google?.maps?.importLibrary) return;
-    if (typeof GOOGLE_MAPS_API_KEY === 'undefined' || !GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_API_KEY')) {
-      throw new Error('API key not configured');
-    }
-
+    if (typeof GOOGLE_MAPS_API_KEY === 'undefined' || !GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_API_KEY')) throw new Error('API key not configured');
     ((g) => {
       let h, a, k;
-      const p = 'The Google Maps JavaScript API';
-      const c = 'google';
-      const l = 'importLibrary';
-      const q = '__ib__';
-      const m = document;
-      let b = window;
-      b = b[c] || (b[c] = {});
-      const d = b.maps || (b.maps = {});
-      const r = new Set();
-      const e = new URLSearchParams();
+      const p = 'The Google Maps JavaScript API', c = 'google', l = 'importLibrary', q = '__ib__', m = document;
+      let b = window; b = b[c] || (b[c] = {});
+      const d = b.maps || (b.maps = {}), r = new Set(), e = new URLSearchParams();
       const u = () => h || (h = new Promise(async (f, n) => {
         await (a = m.createElement('script'));
         e.set('libraries', [...r] + '');
@@ -84,31 +82,23 @@
     })({ key: GOOGLE_MAPS_API_KEY, v: 'weekly', language: 'en', region: 'AU' });
   }
 
-  let placesLibrary = null;
-  let sessionToken = null;
-  let debounceTimer = null;
-  let requestSequence = 0;
-  let predictions = [];
-  let activeIndex = -1;
+  let placesLibrary = null, sessionToken = null, debounceTimer = null, requestSequence = 0, predictions = [], activeIndex = -1;
 
   async function ensurePlaces() {
     if (placesLibrary) return placesLibrary;
     installGoogleBootstrap();
     placesLibrary = await google.maps.importLibrary('places');
-    if (!placesLibrary?.AutocompleteSuggestion || !placesLibrary?.AutocompleteSessionToken) {
-      throw new Error('Google Autocomplete Data API unavailable');
-    }
+    try { await google.maps.importLibrary('core'); } catch (_) {}
+    if (!placesLibrary?.AutocompleteSuggestion || !placesLibrary?.AutocompleteSessionToken) throw new Error('Google Autocomplete Data API unavailable');
     sessionToken = new placesLibrary.AutocompleteSessionToken();
     return placesLibrary;
   }
 
   function renderPredictions(items) {
-    predictions = items;
-    activeIndex = -1;
+    predictions = items; activeIndex = -1;
     if (!items.length) {
       resultsBox.innerHTML = '<div class="address-suggestion-empty">No matching NSW addresses found.</div>';
-      resultsBox.classList.remove('hidden');
-      return;
+      resultsBox.classList.remove('hidden'); return;
     }
     resultsBox.innerHTML = items.map((prediction, index) => {
       const text = prediction.text?.toString?.() || '';
@@ -122,130 +112,61 @@
   }
 
   async function searchAddress() {
-    const input = sourceInput.value.trim();
-    const sequence = ++requestSequence;
-    if (input.length < 3) {
-      hideResults();
-      hint.textContent = 'Start typing an NSW address.';
-      hint.classList.remove('ok', 'error');
-      return;
-    }
+    const input = sourceInput.value.trim(), sequence = ++requestSequence;
+    if (input.length < 3) { hideResults(); hint.textContent = 'Start typing an NSW address.'; hint.classList.remove('ok','error'); return; }
     try {
       const places = await ensurePlaces();
-      hint.textContent = 'Searching Google addresses…';
-      hint.classList.remove('ok', 'error');
-      const { suggestions = [] } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-        input,
-        includedRegionCodes: ['au'],
-        locationRestriction: NSW_BOUNDS,
-        sessionToken
-      });
+      hint.textContent = 'Searching Google addresses…'; hint.classList.remove('ok','error');
+      const { suggestions = [] } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({ input, includedRegionCodes:['au'], locationRestriction:NSW_BOUNDS, sessionToken });
       if (sequence !== requestSequence) return;
       const items = suggestions.map(s => s.placePrediction).filter(Boolean);
       renderPredictions(items);
       hint.textContent = items.length ? 'Select the correct NSW address.' : 'No matching NSW addresses found.';
     } catch (error) {
       if (sequence !== requestSequence) return;
-      console.error('Google address search failed', error);
+      console.error('Google address search failed', error, {name:error?.name, code:error?.code, endpoint:error?.endpoint, message:error?.message});
       hideResults();
       hint.textContent = `Google address search failed: ${errorText(error)}`;
-      hint.classList.remove('ok');
-      hint.classList.add('error');
+      hint.classList.remove('ok'); hint.classList.add('error');
     }
   }
 
   async function selectPrediction(index) {
-    const prediction = predictions[index];
-    if (!prediction) return;
+    const prediction = predictions[index]; if (!prediction) return;
     try {
       const place = prediction.toPlace();
-      await place.fetchFields({ fields: ['formattedAddress', 'addressComponents', 'location'] });
-      const state = component(place, 'administrative_area_level_1')?.shortText || '';
-      const country = component(place, 'country')?.shortText || '';
-      if (country !== 'AU' || state !== 'NSW') {
-        clearValidation();
-        hint.textContent = 'Please select an address in New South Wales.';
-        hint.classList.add('error');
-        hideResults();
-        return;
-      }
-
+      await place.fetchFields({ fields:['formattedAddress','addressComponents','location'] });
+      const state = component(place,'administrative_area_level_1')?.shortText || '';
+      const country = component(place,'country')?.shortText || '';
+      if (country !== 'AU' || state !== 'NSW') { clearValidation(); hint.textContent='Please select an address in New South Wales.'; hint.classList.add('error'); hideResults(); return; }
       const value = stripAustralia(place.formattedAddress || prediction.text?.toString?.() || '');
-      const suburb = component(place, 'locality')?.longText || component(place, 'postal_town')?.longText || component(place, 'sublocality')?.longText || '';
-      const postcode = component(place, 'postal_code')?.longText || '';
-      sourceInput.value = value;
-      sourceInput.dataset.mapsValidated = 'true';
-      sourceInput.dataset.mapsState = 'NSW';
-      sourceInput.dataset.mapsSuburb = suburb;
-      sourceInput.dataset.mapsPostcode = postcode;
-      if (place.location) {
-        sourceInput.dataset.mapsLatitude = String(place.location.lat());
-        sourceInput.dataset.mapsLongitude = String(place.location.lng());
-      }
-      hideResults();
-      hint.textContent = 'NSW address selected.';
-      hint.classList.remove('error');
-      hint.classList.add('ok');
+      const suburb = component(place,'locality')?.longText || component(place,'postal_town')?.longText || component(place,'sublocality')?.longText || '';
+      const postcode = component(place,'postal_code')?.longText || '';
+      sourceInput.value=value; sourceInput.dataset.mapsValidated='true'; sourceInput.dataset.mapsState='NSW'; sourceInput.dataset.mapsSuburb=suburb; sourceInput.dataset.mapsPostcode=postcode;
+      if (place.location) { sourceInput.dataset.mapsLatitude=String(place.location.lat()); sourceInput.dataset.mapsLongitude=String(place.location.lng()); }
+      hideResults(); hint.textContent='NSW address selected.'; hint.classList.remove('error'); hint.classList.add('ok');
       if (placesLibrary?.AutocompleteSessionToken) sessionToken = new placesLibrary.AutocompleteSessionToken();
     } catch (error) {
-      console.error('Google address selection failed', error);
-      hint.textContent = `Google address selection failed: ${errorText(error)}`;
-      hint.classList.remove('ok');
-      hint.classList.add('error');
+      console.error('Google address selection failed', error, {name:error?.name, code:error?.code, endpoint:error?.endpoint, message:error?.message});
+      hint.textContent=`Google address selection failed: ${errorText(error)}`; hint.classList.remove('ok'); hint.classList.add('error');
     }
   }
 
   function updateActiveSuggestion(next) {
-    const buttons = [...resultsBox.querySelectorAll('.address-suggestion')];
-    if (!buttons.length) return;
-    activeIndex = (next + buttons.length) % buttons.length;
-    buttons.forEach((btn, i) => btn.classList.toggle('active', i === activeIndex));
-    buttons[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    const buttons=[...resultsBox.querySelectorAll('.address-suggestion')]; if(!buttons.length)return;
+    activeIndex=(next+buttons.length)%buttons.length; buttons.forEach((btn,i)=>btn.classList.toggle('active',i===activeIndex)); buttons[activeIndex]?.scrollIntoView({block:'nearest'});
   }
-
-  sourceInput.addEventListener('input', () => {
-    clearValidation();
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(searchAddress, 220);
+  sourceInput.addEventListener('input',()=>{ clearValidation(); clearTimeout(debounceTimer); debounceTimer=setTimeout(searchAddress,220); });
+  sourceInput.addEventListener('keydown',e=>{
+    if(resultsBox.classList.contains('hidden'))return; const count=resultsBox.querySelectorAll('.address-suggestion').length;
+    if(e.key==='ArrowDown'&&count){e.preventDefault();updateActiveSuggestion(activeIndex+1);} else if(e.key==='ArrowUp'&&count){e.preventDefault();updateActiveSuggestion(activeIndex<=0?count-1:activeIndex-1);} else if(e.key==='Enter'&&activeIndex>=0){e.preventDefault();selectPrediction(activeIndex);} else if(e.key==='Escape')hideResults();
   });
-  sourceInput.addEventListener('keydown', e => {
-    if (resultsBox.classList.contains('hidden')) return;
-    const count = resultsBox.querySelectorAll('.address-suggestion').length;
-    if (e.key === 'ArrowDown' && count) { e.preventDefault(); updateActiveSuggestion(activeIndex + 1); }
-    else if (e.key === 'ArrowUp' && count) { e.preventDefault(); updateActiveSuggestion(activeIndex <= 0 ? count - 1 : activeIndex - 1); }
-    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); selectPrediction(activeIndex); }
-    else if (e.key === 'Escape') hideResults();
-  });
-  sourceInput.addEventListener('focus', () => {
-    if (sourceInput.value.trim().length >= 3 && predictions.length) resultsBox.classList.remove('hidden');
-  });
-  document.addEventListener('pointerdown', e => {
-    if (!e.target.closest('.places-address-wrap') && !e.target.closest('#googleAddressSuggestions')) hideResults();
-  });
-
-  jobForm.addEventListener('submit', e => {
-    const value = sourceInput.value.trim();
-    const nonNswState = value.match(/\b(VIC|QLD|SA|WA|TAS|ACT|NT)\b/i);
-    if (nonNswState || (sourceInput.dataset.mapsState && sourceInput.dataset.mapsState !== 'NSW')) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      alert('Schedule+ only accepts New South Wales addresses.');
-      sourceInput.focus();
-    }
-  }, true);
-
-  window.SchedulePlusAddress = {
-    syncFromSource() {
-      clearValidation();
-      hideResults();
-      hint.textContent = 'Start typing an NSW address.';
-      hint.classList.remove('ok', 'error');
-    }
-  };
-
-  ensurePlaces().catch(error => {
-    console.error('Google Places setup failed', error);
-    hint.textContent = `Google address search is unavailable (${errorText(error)}).`;
-    hint.classList.add('error');
-  });
+  sourceInput.addEventListener('focus',()=>{if(sourceInput.value.trim().length>=3&&predictions.length)resultsBox.classList.remove('hidden');});
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.places-address-wrap')&&!e.target.closest('#googleAddressSuggestions'))hideResults();});
+  jobForm.addEventListener('submit',e=>{
+    const value=sourceInput.value.trim(), nonNswState=value.match(/\b(VIC|QLD|SA|WA|TAS|ACT|NT)\b/i);
+    if(nonNswState||(sourceInput.dataset.mapsState&&sourceInput.dataset.mapsState!=='NSW')){e.preventDefault();e.stopImmediatePropagation();alert('Schedule+ only accepts New South Wales addresses.');sourceInput.focus();}
+  },true);
+  window.SchedulePlusAddress={syncFromSource(){clearValidation();hideResults();hint.textContent='Start typing an NSW address.';hint.classList.remove('ok','error');}};
+  ensurePlaces().catch(error=>{console.error('Google Places setup failed',error,{name:error?.name,code:error?.code,endpoint:error?.endpoint,message:error?.message});hint.textContent=`Google address search is unavailable (${errorText(error)}).`;hint.classList.add('error');});
 })();
