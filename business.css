@@ -1,0 +1,27 @@
+:root{--tenant-accent:#ff00a8;--tenant-secondary:#0d9488}
+.tenant-business-name{display:block;color:#d4d4d8;font-size:.75rem;font-weight:700;line-height:1.25;margin-top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tenant-settings-btn{width:100%;margin-top:8px;border:1px solid #34343a;border-radius:12px;padding:12px 13px;text-align:left;background:#1b1b1f;color:#fff;font-weight:750;cursor:pointer}
+.tenant-settings-btn:hover{border-color:var(--tenant-accent)}
+.tenant-dialog{width:min(620px,calc(100% - 24px))}
+.tenant-card{padding:20px;display:grid;gap:15px}
+.tenant-form{display:grid;gap:14px}
+.tenant-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tenant-form label{display:grid;gap:6px;font-size:.9rem;font-weight:700}
+.tenant-form input,.tenant-form select,.tenant-form textarea{width:100%;border:1px solid #3b3b42;border-radius:12px;padding:11px 12px;background:#1b1b1f;color:#fff;font:inherit}
+.tenant-form input:focus,.tenant-form select:focus,.tenant-form textarea:focus{outline:2px solid var(--tenant-accent);outline-offset:1px;border-color:var(--tenant-accent)}
+.tenant-logo-row{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:14px;padding:12px;border:1px solid #303036;border-radius:14px;background:#111113}
+.tenant-logo-preview{width:92px;height:92px;object-fit:contain;border-radius:12px;background:#0b0b0d;border:1px solid #303036}
+.tenant-logo-help{color:#a1a1aa;font-size:.76rem;line-height:1.4;margin-top:5px}
+.tenant-colour{display:grid;grid-template-columns:54px 1fr;align-items:center;gap:10px}
+.tenant-colour input[type=color]{width:54px;height:42px;padding:3px;cursor:pointer}
+.tenant-message{min-height:18px;margin:0;color:#f4a8d9;font-size:.82rem}.tenant-message.ok{color:#7dd3fc}
+.tenant-role{display:inline-flex;width:max-content;padding:5px 9px;border-radius:999px;background:#26262b;color:#d4d4d8;font-size:.72rem;font-weight:800;text-transform:capitalize}
+.tenant-readonly{padding:10px 12px;border-radius:12px;background:#17171a;border:1px solid #303036;color:#a1a1aa;font-size:.82rem}
+.tenant-onboarding .tenant-card{max-width:480px}.tenant-onboarding-copy{margin:0;color:#a1a1aa;line-height:1.5}
+body .primary,body .auth-card button[type=submit]{background:var(--tenant-accent)}
+body .stat.active{outline-color:var(--tenant-accent);border-color:var(--tenant-accent)}
+body .type-filter.active{background:var(--tenant-accent);border-color:var(--tenant-accent)}
+body .month-day.has-jobs{border-color:var(--tenant-accent)}
+body .month-job-count{background:var(--tenant-accent)}
+body .tech-section>summary{background:var(--tenant-secondary)!important}
+@media(max-width:600px){.tenant-grid2{grid-template-columns:1fr}.tenant-logo-row{grid-template-columns:72px 1fr}.tenant-logo-preview{width:72px;height:72px}}
