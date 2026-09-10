@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0d">
   <meta name="description" content="Schedule+ job organiser for electricians.">
-  <link rel="manifest" href="manifest.webmanifest?v=0.4.0">
-  <link rel="icon" href="assets/icons/icon.svg?v=0.4.0" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/powerup-logo.png?v=0.4.0">
-  <link rel="stylesheet" href="styles.css?v=0.4.0">
+  <link rel="manifest" href="manifest.webmanifest?v=0.4.01">
+  <link rel="icon" href="assets/icons/icon.svg?v=0.4.01" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/powerup-logo.png?v=0.4.01">
+  <link rel="stylesheet" href="styles.css?v=0.4.01">
+  <link rel="stylesheet" href="maps-autocomplete.css?v=0.4.01">
   <title>Schedule+</title>
 </head>
 <body>
 <div id="pinView" class="auth-shell hidden">
   <div class="auth-card pin-card">
-    <img class="auth-logo" src="assets/powerup-logo.png?v=0.4.0" alt="PowerUp Group logo">
+    <img class="auth-logo" src="assets/powerup-logo.png?v=0.4.01" alt="PowerUp Group logo">
     <h1>Schedule+</h1><p>Enter your 4-digit PIN</p>
     <form id="pinUnlockForm"><label>PIN<input id="pinUnlock" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label><button type="submit">Unlock</button></form>
     <button id="usePasswordBtn" class="secondary" type="button">Use email & password</button><p id="pinMessage" class="message"></p>
@@ -23,7 +24,7 @@
 
 <div id="authView" class="auth-shell">
   <div class="auth-card">
-    <img class="auth-logo" src="assets/powerup-logo.png?v=0.4.0" alt="PowerUp Group logo">
+    <img class="auth-logo" src="assets/powerup-logo.png?v=0.4.01" alt="PowerUp Group logo">
     <h1>Schedule+</h1><p>Simple job planning for busy electricians.</p>
     <form id="authForm"><label>Email<input id="email" type="email" autocomplete="email" required></label><label>Password<input id="password" type="password" autocomplete="current-password" minlength="6" required></label><button type="submit">Sign in</button></form>
     <button id="signUpBtn" class="secondary" type="button">Create account</button><button id="resendBtn" class="link-button" type="button">Resend confirmation email</button><p id="authMessage" class="message"></p>
@@ -32,13 +33,13 @@
 
 <div id="appView" class="app-shell hidden">
   <header class="topbar">
-    <div class="brand"><button id="menuBtn" class="menu-btn" aria-label="Open menu">☰</button><img src="assets/powerup-logo.png?v=0.4.0" alt=""><strong>Schedule+</strong></div>
+    <div class="brand"><button id="menuBtn" class="menu-btn" aria-label="Open menu">☰</button><img src="assets/powerup-logo.png?v=0.4.01" alt=""><strong>Schedule+</strong></div>
     <div class="top-actions"><span id="versionBadge" class="version-badge"></span><button id="pinSettingsBtn" class="ghost">PIN</button><button id="signOutBtn" class="ghost">Sign out</button></div>
   </header>
 
   <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
   <aside id="sideMenu" class="side-menu">
-    <div class="side-menu-head"><img src="assets/powerup-logo.png?v=0.4.0" alt="PowerUp Group logo"><div><strong>Schedule+</strong><small>Job organiser</small></div><button id="closeMenuBtn" class="ghost" aria-label="Close menu">✕</button></div>
+    <div class="side-menu-head"><img src="assets/powerup-logo.png?v=0.4.01" alt="PowerUp Group logo"><div><strong>Schedule+</strong><small>Job organiser</small></div><button id="closeMenuBtn" class="ghost" aria-label="Close menu">✕</button></div>
     <nav><button class="nav-item active" data-view="dashboard">Dashboard</button><button class="nav-item" data-view="calendar">Calendar</button></nav>
   </aside>
 
@@ -86,7 +87,7 @@
       <input id="jobId" type="hidden">
       <label>Job type *<select id="jobTitle" required><option value="">Select job type</option><option value="Battery">Battery</option><option value="Solar">Solar</option><option value="Battery + Solar">Battery + Solar</option></select></label>
       <div class="grid2"><label>Customer<input id="customerName"></label><label>Phone<input id="customerPhone" type="tel"></label></div>
-      <label>Address<div class="address-row"><input id="addressLine" autocomplete="street-address" placeholder="Full street address, suburb, state and postcode"><button id="mapsLookupBtn" class="secondary compact" type="button">Find on Google Maps</button></div></label>
+      <label>Address<div class="address-row"><input id="addressLine" autocomplete="off" placeholder="Start typing an NSW address"><button id="mapsLookupBtn" class="secondary compact" type="button">Find on Google Maps</button></div></label>
       <label>Job description<textarea id="description" rows="3"></textarea></label>
 
       <div class="form-section-title"><strong>System details</strong><span>Optional — add what you know</span></div>
@@ -105,9 +106,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=0.4.0"></script>
-<script src="version.js?v=0.4.0"></script>
+<script src="supabase.js?v=0.4.01"></script>
+<script src="version.js?v=0.4.01"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('versionBadge');if(el&&typeof APP_VERSION!=='undefined')el.textContent='v'+APP_VERSION;});</script>
-<script src="app.js?v=0.4.0"></script>
+<script src="maps-config.js?v=0.4.01"></script>
+<script src="app.js?v=0.4.01"></script>
+<script src="maps-autocomplete.js?v=0.4.01"></script>
 </body>
 </html>
