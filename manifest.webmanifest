@@ -1,14 +1,14 @@
 {
   "name":"Schedule+",
   "short_name":"Schedule+",
-  "description":"Simple job planning for busy electricians.",
-  "start_url":"./?v=0.4.13",
+  "description":"Multi-business job planning for electricians and trade teams.",
+  "start_url":"./?v=0.5.0",
   "scope":"./",
   "display":"standalone",
   "background_color":"#0b0b0d",
   "theme_color":"#0b0b0d",
   "icons":[
-    {"src":"assets/powerup-logo.png?v=0.4.13","sizes":"2000x2000","type":"image/png","purpose":"any"},
-    {"src":"assets/powerup-logo.png?v=0.4.13","sizes":"2000x2000","type":"image/png","purpose":"maskable"}
+    {"src":"assets/powerup-logo.png?v=0.5.0","sizes":"2000x2000","type":"image/png","purpose":"any"},
+    {"src":"assets/powerup-logo.png?v=0.5.0","sizes":"2000x2000","type":"image/png","purpose":"maskable"}
   ]
 }
