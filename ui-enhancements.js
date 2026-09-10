@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '0.4.04';
+  const VERSION = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '0.4.05';
   const RELEASE_KEY = 'schedule_plus_last_seen_version';
   const DEVICE_KEY = 'schedule_plus_device_id';
 
@@ -7,9 +7,14 @@
     return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   }
 
-  function friendlyName(email=''){
+  function fallbackFriendlyName(email=''){
     const local = String(email || '').split('@')[0] || 'Signed in';
     return local.replace(/[._-]+/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
+  }
+
+  function displayName(user){
+    const saved = String(user?.user_metadata?.display_name || '').trim();
+    return saved || fallbackFriendlyName(user?.email || '');
   }
 
   function getDeviceId(){
@@ -74,6 +79,18 @@
     if(typeof render === 'function') render();
   }
 
+  function removeDuplicateTechSections(){
+    const seen = new Set();
+    document.querySelectorAll('#jobForm details.tech-section, #jobForm details.job-accordion').forEach(section => {
+      const heading = section.querySelector('summary')?.textContent?.trim().toLowerCase() || '';
+      const key = heading.startsWith('system details') ? 'system details' : heading.startsWith('battery') ? 'battery' : heading.startsWith('inverter') ? 'inverter' : heading;
+      if(!key) return;
+      if(seen.has(key)) section.remove();
+      else seen.add(key);
+    });
+  }
+  removeDuplicateTechSections();
+
   function closeOtherDetails(opened){
     document.querySelectorAll('#jobForm details.tech-section[open]').forEach(d => {
       if(d !== opened) d.removeAttribute('open');
@@ -90,7 +107,7 @@
 
   function updateSignedInUser(user){
     const btn = document.getElementById('signedInUser');
-    if(btn) btn.textContent = friendlyName(user?.email || '');
+    if(btn) btn.textContent = displayName(user);
   }
 
   function profileRow(label,value,copy=false){
@@ -105,21 +122,52 @@
     if(!modal || !body) return;
     let user = null;
     try { user = (await supabaseClient.auth.getUser()).data?.user || currentUser || null; } catch(_) { user = currentUser || null; }
-    body.innerHTML = [
-      profileRow('Username',friendlyName(user?.email || '')),
-      profileRow('Email',user?.email || ''),
-      profileRow('User ID',user?.id || '',true),
-      profileRow('Device ID',getDeviceId(),true),
-      profileRow('Device Type',getDeviceType()),
-      profileRow('Browser',getBrowserName()),
-      profileRow('App Version',`v${VERSION}`)
-    ].join('');
+    body.innerHTML = `
+      <div class="profile-row profile-edit-row">
+        <div class="profile-row-label">Username</div>
+        <div class="profile-username-edit"><input id="profileUsernameInput" maxlength="40" value="${esc(displayName(user))}" autocomplete="off"><button id="saveUsernameBtn" type="button">Save</button></div>
+        <div id="profileUsernameMessage" class="profile-username-message"></div>
+      </div>
+      ${profileRow('Email',user?.email || '')}
+      ${profileRow('User ID',user?.id || '',true)}
+      ${profileRow('Device ID',getDeviceId(),true)}
+      ${profileRow('Device Type',getDeviceType())}
+      ${profileRow('Browser',getBrowserName())}
+      ${profileRow('App Version',`v${VERSION}`)}
+    `;
+
     body.querySelectorAll('[data-copy-value]').forEach(btn=>btn.onclick=async()=>{
       try{
         await navigator.clipboard.writeText(btn.dataset.copyValue);
         const old=btn.textContent; btn.textContent='Copied'; setTimeout(()=>btn.textContent=old,900);
       }catch(_){}
     });
+
+    document.getElementById('saveUsernameBtn')?.addEventListener('click', async()=>{
+      const input = document.getElementById('profileUsernameInput');
+      const message = document.getElementById('profileUsernameMessage');
+      const name = String(input?.value || '').trim();
+      if(name.length < 2){
+        if(message) message.textContent = 'Enter at least 2 characters.';
+        input?.focus();
+        return;
+      }
+      const btn = document.getElementById('saveUsernameBtn');
+      if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+      const {data,error} = await supabaseClient.auth.updateUser({data:{display_name:name}});
+      if(btn){ btn.disabled = false; btn.textContent = 'Save'; }
+      if(error){
+        if(message) message.textContent = error.message;
+        return;
+      }
+      if(data?.user) currentUser = data.user;
+      updateSignedInUser(data?.user || currentUser);
+      if(message){
+        message.textContent = 'Username updated.';
+        message.classList.add('ok');
+      }
+    });
+
     modal.showModal();
   }
 
@@ -135,9 +183,11 @@
   const originalOpenJob = typeof openJob === 'function' ? openJob : null;
   if(originalOpenJob){
     openJob = function(j=null, defaultDate=null){
+      removeDuplicateTechSections();
       originalOpenJob(j, defaultDate);
       const btn = document.getElementById('removeCalendarBtn');
       if(btn) btn.classList.toggle('hidden', !(j && j.scheduled_date));
+      window.SchedulePlusAddress?.syncFromSource?.();
     };
   }
 
