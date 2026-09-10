@@ -119,7 +119,7 @@
 
   function showWhatsNew(force=false){
     const modal = document.getElementById('updateModal');
-    if(!modal) return;
+    if(!modal || modal.open) return;
     const seen = localStorage.getItem(RELEASE_KEY);
     if(!force && seen === VERSION) return;
     document.getElementById('updateVersion').textContent = `Version ${VERSION}`;
@@ -144,16 +144,5 @@
   })();
   supabaseClient.auth.onAuthStateChange((_event,session)=>{
     updateSignedInUser(session?.user);
-    if(session?.user) setTimeout(()=>showWhatsNew(false),250);
   });
-
-  if('serviceWorker' in navigator){
-    let reloading=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(reloading) return;
-      reloading=true;
-      location.reload();
-    });
-    navigator.serviceWorker.register(`./sw.js?v=${VERSION}`,{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
-  }
 })();
