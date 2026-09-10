@@ -5,21 +5,175 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0d">
   <meta name="description" content="Schedule+ job organiser for electricians.">
-  <link rel="manifest" href="manifest.webmanifest?v=0.2.0">
-  <link rel="icon" href="assets/icons/icon.svg?v=0.2.0" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/powerup-logo.png?v=0.2.0">
-  <link rel="stylesheet" href="styles.css?v=0.2.0">
+  <link rel="manifest" href="manifest.webmanifest?v=0.3.0">
+  <link rel="icon" href="assets/icons/icon.svg?v=0.3.0" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/powerup-logo.png?v=0.3.0">
+  <link rel="stylesheet" href="styles.css?v=0.3.0">
   <title>Schedule+</title>
-</head><body>
-<div id="pinView" class="auth-shell hidden"><div class="auth-card pin-card"><img class="auth-logo" src="assets/powerup-logo.png?v=0.2.0" alt="PowerUp Group logo"><h1>Schedule+</h1><p>Enter your 4-digit PIN</p><form id="pinUnlockForm"><label>PIN<input id="pinUnlock" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label><button type="submit">Unlock</button></form><button id="usePasswordBtn" class="secondary" type="button">Use email & password</button><p id="pinMessage" class="message"></p></div></div>
-<div id="authView" class="auth-shell"><div class="auth-card"><img class="auth-logo" src="assets/powerup-logo.png?v=0.2.0" alt="PowerUp Group logo"><h1>Schedule+</h1><p>Simple job planning for busy electricians.</p><form id="authForm"><label>Email<input id="email" type="email" autocomplete="email" required></label><label>Password<input id="password" type="password" autocomplete="current-password" minlength="6" required></label><button type="submit">Sign in</button></form><button id="signUpBtn" class="secondary" type="button">Create account</button><button id="resendBtn" class="link-button" type="button">Resend confirmation email</button><p id="authMessage" class="message"></p></div></div>
+</head>
+<body>
+<div id="pinView" class="auth-shell hidden">
+  <div class="auth-card pin-card">
+    <img class="auth-logo" src="assets/powerup-logo.png?v=0.3.0" alt="PowerUp Group logo">
+    <h1>Schedule+</h1>
+    <p>Enter your 4-digit PIN</p>
+    <form id="pinUnlockForm">
+      <label>PIN<input id="pinUnlock" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+      <button type="submit">Unlock</button>
+    </form>
+    <button id="usePasswordBtn" class="secondary" type="button">Use email & password</button>
+    <p id="pinMessage" class="message"></p>
+  </div>
+</div>
+
+<div id="authView" class="auth-shell">
+  <div class="auth-card">
+    <img class="auth-logo" src="assets/powerup-logo.png?v=0.3.0" alt="PowerUp Group logo">
+    <h1>Schedule+</h1>
+    <p>Simple job planning for busy electricians.</p>
+    <form id="authForm">
+      <label>Email<input id="email" type="email" autocomplete="email" required></label>
+      <label>Password<input id="password" type="password" autocomplete="current-password" minlength="6" required></label>
+      <button type="submit">Sign in</button>
+    </form>
+    <button id="signUpBtn" class="secondary" type="button">Create account</button>
+    <button id="resendBtn" class="link-button" type="button">Resend confirmation email</button>
+    <p id="authMessage" class="message"></p>
+  </div>
+</div>
+
 <div id="appView" class="app-shell hidden">
-<header class="topbar"><div class="brand"><button id="menuBtn" class="menu-btn" aria-label="Open menu">☰</button><img src="assets/powerup-logo.png?v=0.2.0" alt=""><strong>Schedule+</strong></div><div class="top-actions"><span id="versionBadge" class="version-badge"></span><button id="pinSettingsBtn" class="ghost">PIN</button><button id="signOutBtn" class="ghost">Sign out</button></div></header>
-<div id="drawerBackdrop" class="drawer-backdrop hidden"></div><aside id="sideMenu" class="side-menu"><div class="side-menu-head"><img src="assets/powerup-logo.png?v=0.2.0" alt="PowerUp Group logo"><div><strong>Schedule+</strong><small>Job organiser</small></div><button id="closeMenuBtn" class="ghost" aria-label="Close menu">✕</button></div><nav><button class="nav-item active" data-view="dashboard">Dashboard</button><button class="nav-item" data-view="calendar">7-day calendar</button></nav></aside>
-<main>
-<section id="dashboardView"><section class="hero-row"><div><p class="eyebrow">JOB ORGANISER</p><h1>Jobs</h1></div><button id="newJobBtn" class="primary">+ New job</button></section><section class="stats" aria-label="Job summary"><button class="stat active" data-filter="all"><span id="countAll">0</span><small>All</small></button><button class="stat" data-filter="scheduled"><span id="countScheduled">0</span><small>Scheduled</small></button><button class="stat" data-filter="unscheduled"><span id="countUnscheduled">0</span><small>Unscheduled</small></button><button class="stat" data-filter="followup"><span id="countFollowup">0</span><small>Follow-Up</small></button></section><section class="toolbar"><input id="searchInput" type="search" placeholder="Search customer, address or job…"><select id="statusFilter" aria-label="Filter by status"><option value="">All statuses</option><option value="new">New</option><option value="to_schedule">To schedule</option><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="waiting">Follow-Up</option><option value="completed">Completed</option></select></section><section id="jobsList" class="jobs-list"></section></section>
-<section id="calendarView" class="hidden"><section class="hero-row"><div><p class="eyebrow">NEXT 7 DAYS</p><h1>Calendar</h1></div><button id="calendarNewJobBtn" class="primary">+ New job</button></section><section id="sevenDayCalendar" class="seven-day-calendar"></section></section>
-</main>
-<dialog id="pinDialog"><form id="pinSetupForm" method="dialog"><div class="dialog-head"><h2>PIN access</h2><button id="closePinBtn" class="ghost" type="button">✕</button></div><p class="muted">Set a 4-digit PIN for quick access on this device. Your normal Supabase login remains the secure account login.</p><label>New 4-digit PIN<input id="newPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label><label>Confirm PIN<input id="confirmPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label><div class="dialog-actions"><button id="removePinBtn" class="danger" type="button">Remove PIN</button><button class="primary" type="submit">Save PIN</button></div><p id="pinSetupMessage" class="message"></p></form></dialog>
-<dialog id="jobDialog"><form id="jobForm" method="dialog"><div class="dialog-head"><h2 id="jobDialogTitle">New job</h2><button id="closeJobBtn" class="ghost" type="button">✕</button></div><input id="jobId" type="hidden"><label>Job type *<select id="jobTitle" required><option value="">Select job type</option><option value="Battery">Battery</option><option value="Solar">Solar</option><option value="Battery + Solar">Battery + Solar</option></select></label><div class="grid2"><label>Customer<input id="customerName"></label><label>Phone<input id="customerPhone" type="tel"></label></div><label>Address<div class="address-row"><input id="addressLine" autocomplete="street-address" placeholder="Full street address, suburb, state and postcode"><button id="mapsLookupBtn" class="secondary compact" type="button">Find on Google Maps</button></div></label><label>Job description<textarea id="description" rows="3"></textarea></label><div class="grid2"><label>Status<select id="status"><option value="new">New</option><option value="to_schedule">To schedule</option><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="waiting">Follow-Up</option><option value="completed">Completed</option></select></label><label>Priority<select id="priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label></div><div class="grid3"><label>Date<input id="scheduledDate" type="date"></label><label>Start<input id="scheduledStart" type="time"></label><label>Duration (hours)<select id="estimatedHours"><option value="">Select</option><option value="0.5">0.5</option><option value="1">1.0</option><option value="1.5">1.5</option><option value="2">2.0</option><option value="2.5">2.5</option><option value="3">3.0</option><option value="3.5">3.5</option><option value="4">4.0</option><option value="4.5">4.5</option><option value="5">5.0</option><option value="5.5">5.5</option><option value="6">6.0</option><option value="6.5">6.5</option><option value="7">7.0</option><option value="7.5">7.5</option><option value="8">8.0</option></select></label></div><div class="dialog-actions"><button id="deleteJobBtn" class="danger hidden" type="button">Delete</button><button class="primary" type="submit">Save job</button></div></form></dialog></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase.js?v=0.2.0"></script><script src="version.js?v=0.2.0"></script><script>document.addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('versionBadge');if(el&&typeof APP_VERSION!=='undefined')el.textContent='v'+APP_VERSION;});</script><script src="app.js?v=0.2.0"></script></body></html>
+  <header class="topbar">
+    <div class="brand">
+      <button id="menuBtn" class="menu-btn" aria-label="Open menu">☰</button>
+      <img src="assets/powerup-logo.png?v=0.3.0" alt="">
+      <strong>Schedule+</strong>
+    </div>
+    <div class="top-actions">
+      <span id="versionBadge" class="version-badge"></span>
+      <button id="pinSettingsBtn" class="ghost">PIN</button>
+      <button id="signOutBtn" class="ghost">Sign out</button>
+    </div>
+  </header>
+
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+  <aside id="sideMenu" class="side-menu">
+    <div class="side-menu-head">
+      <img src="assets/powerup-logo.png?v=0.3.0" alt="PowerUp Group logo">
+      <div><strong>Schedule+</strong><small>Job organiser</small></div>
+      <button id="closeMenuBtn" class="ghost" aria-label="Close menu">✕</button>
+    </div>
+    <nav>
+      <button class="nav-item active" data-view="dashboard">Dashboard</button>
+      <button class="nav-item" data-view="calendar">Calendar</button>
+    </nav>
+  </aside>
+
+  <main>
+    <section id="dashboardView">
+      <section class="hero-row">
+        <div><p class="eyebrow">JOB ORGANISER</p><h1>Jobs</h1></div>
+        <button id="newJobBtn" class="primary">+ New job</button>
+      </section>
+      <section class="stats" aria-label="Job summary">
+        <button class="stat active" data-filter="all"><span id="countAll">0</span><small>All</small></button>
+        <button class="stat" data-filter="scheduled"><span id="countScheduled">0</span><small>Scheduled</small></button>
+        <button class="stat" data-filter="unscheduled"><span id="countUnscheduled">0</span><small>Unscheduled</small></button>
+        <button class="stat" data-filter="followup"><span id="countFollowup">0</span><small>Follow-Up</small></button>
+      </section>
+      <section class="toolbar">
+        <input id="searchInput" type="search" placeholder="Search customer, address or job…">
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option value="new">New</option>
+          <option value="to_schedule">To schedule</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="in_progress">In progress</option>
+          <option value="waiting">Follow-Up</option>
+          <option value="completed">Completed</option>
+        </select>
+      </section>
+      <section id="jobsList" class="jobs-list"></section>
+    </section>
+
+    <section id="calendarView" class="hidden">
+      <section class="hero-row">
+        <div><p class="eyebrow">MONTHLY VIEW</p><h1>Calendar</h1></div>
+        <button id="calendarNewJobBtn" class="primary">+ New job</button>
+      </section>
+
+      <section class="calendar-shell">
+        <div class="calendar-toolbar">
+          <button id="calendarPrevBtn" class="calendar-nav" type="button" aria-label="Previous month">‹</button>
+          <div class="calendar-title-wrap">
+            <strong id="calendarMonthLabel"></strong>
+            <button id="calendarTodayBtn" class="calendar-today" type="button">Today</button>
+          </div>
+          <button id="calendarNextBtn" class="calendar-nav" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div id="monthCalendar" class="month-calendar"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="pinDialog">
+    <form id="pinSetupForm" method="dialog">
+      <div class="dialog-head"><h2>PIN access</h2><button id="closePinBtn" class="ghost" type="button">✕</button></div>
+      <p class="muted">Set a 4-digit PIN for quick access on this device. Your normal Supabase login remains the secure account login.</p>
+      <label>New 4-digit PIN<input id="newPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+      <label>Confirm PIN<input id="confirmPin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" required></label>
+      <div class="dialog-actions"><button id="removePinBtn" class="danger" type="button">Remove PIN</button><button class="primary" type="submit">Save PIN</button></div>
+      <p id="pinSetupMessage" class="message"></p>
+    </form>
+  </dialog>
+
+  <dialog id="dayJobsDialog" class="day-jobs-dialog-shell">
+    <div class="day-jobs-dialog">
+      <div class="dialog-head">
+        <div><h2 id="dayJobsDialogTitle">Jobs</h2><p id="dayJobsDialogSub" class="muted day-dialog-sub"></p></div>
+        <button id="closeDayJobsBtn" class="ghost" type="button">✕</button>
+      </div>
+      <div id="dayJobsList" class="day-jobs-list"></div>
+      <div class="dialog-actions day-dialog-actions"><button id="dayAddJobBtn" class="primary" type="button">+ New job on this day</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="jobDialog">
+    <form id="jobForm" method="dialog">
+      <div class="dialog-head"><h2 id="jobDialogTitle">New job</h2><button id="closeJobBtn" class="ghost" type="button">✕</button></div>
+      <input id="jobId" type="hidden">
+      <label>Job type *
+        <select id="jobTitle" required>
+          <option value="">Select job type</option>
+          <option value="Battery">Battery</option>
+          <option value="Solar">Solar</option>
+          <option value="Battery + Solar">Battery + Solar</option>
+        </select>
+      </label>
+      <div class="grid2"><label>Customer<input id="customerName"></label><label>Phone<input id="customerPhone" type="tel"></label></div>
+      <label>Address<div class="address-row"><input id="addressLine" autocomplete="street-address" placeholder="Full street address, suburb, state and postcode"><button id="mapsLookupBtn" class="secondary compact" type="button">Find on Google Maps</button></div></label>
+      <label>Job description<textarea id="description" rows="3"></textarea></label>
+      <div class="grid2">
+        <label>Status<select id="status"><option value="new">New</option><option value="to_schedule">To schedule</option><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="waiting">Follow-Up</option><option value="completed">Completed</option></select></label>
+        <label>Priority<select id="priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+      </div>
+      <div class="grid3">
+        <label>Date<input id="scheduledDate" type="date"></label>
+        <label>Start<input id="scheduledStart" type="time"></label>
+        <label>Duration (hours)<select id="estimatedHours"><option value="">Select</option><option value="0.5">0.5</option><option value="1">1.0</option><option value="1.5">1.5</option><option value="2">2.0</option><option value="2.5">2.5</option><option value="3">3.0</option><option value="3.5">3.5</option><option value="4">4.0</option><option value="4.5">4.5</option><option value="5">5.0</option><option value="5.5">5.5</option><option value="6">6.0</option><option value="6.5">6.5</option><option value="7">7.0</option><option value="7.5">7.5</option><option value="8">8.0</option></select></label>
+      </div>
+      <div class="dialog-actions"><button id="deleteJobBtn" class="danger hidden" type="button">Delete</button><button class="primary" type="submit">Save job</button></div>
+    </form>
+  </dialog>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=0.3.0"></script>
+<script src="version.js?v=0.3.0"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('versionBadge');if(el&&typeof APP_VERSION!=='undefined')el.textContent='v'+APP_VERSION;});</script>
+<script src="app.js?v=0.3.0"></script>
+</body>
+</html>
