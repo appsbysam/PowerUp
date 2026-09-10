@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '0.4.03';
+  const VERSION = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '0.4.04';
   const RELEASE_KEY = 'schedule_plus_last_seen_version';
   const DEVICE_KEY = 'schedule_plus_device_id';
 
@@ -83,6 +83,11 @@
     d.addEventListener('toggle',()=>{ if(d.open) closeOtherDetails(d); });
   });
 
+  function closeSideMenu(){
+    document.getElementById('sideMenu')?.classList.remove('open');
+    document.getElementById('drawerBackdrop')?.classList.add('hidden');
+  }
+
   function updateSignedInUser(user){
     const btn = document.getElementById('signedInUser');
     if(btn) btn.textContent = friendlyName(user?.email || '');
@@ -94,6 +99,7 @@
   }
 
   async function openUserProfile(){
+    closeSideMenu();
     const modal = document.getElementById('profileModal');
     const body = document.getElementById('profileBody');
     if(!modal || !body) return;
@@ -126,10 +132,35 @@
     modal.showModal();
   }
 
+  const originalOpenJob = typeof openJob === 'function' ? openJob : null;
+  if(originalOpenJob){
+    openJob = function(j=null, defaultDate=null){
+      originalOpenJob(j, defaultDate);
+      const btn = document.getElementById('removeCalendarBtn');
+      if(btn) btn.classList.toggle('hidden', !(j && j.scheduled_date));
+    };
+  }
+
+  document.getElementById('removeCalendarBtn')?.addEventListener('click',async()=>{
+    const id = document.getElementById('jobId')?.value;
+    if(!id) return;
+    const job = jobs.find(j=>String(j.id)===String(id));
+    if(!job?.scheduled_date) return;
+    if(!confirm('Remove this job from the calendar? The job itself will be kept.')) return;
+    const update = {scheduled_date:null, scheduled_start:null};
+    if(job.status === 'scheduled') update.status = 'to_schedule';
+    const {error} = await supabaseClient.from('jobs').update(update).eq('id',id);
+    if(error){ alert(error.message); return; }
+    document.getElementById('jobDialog')?.close();
+    await loadJobs();
+  });
+
   document.getElementById('signedInUser')?.addEventListener('click',openUserProfile);
+  document.getElementById('userProfileMenuBtn')?.addEventListener('click',openUserProfile);
   document.getElementById('profileClose')?.addEventListener('click',()=>document.getElementById('profileModal')?.close());
   document.getElementById('profileDone')?.addEventListener('click',()=>document.getElementById('profileModal')?.close());
-  document.getElementById('whatsNewBtn')?.addEventListener('click',()=>{ document.getElementById('sideMenu')?.classList.remove('open'); document.getElementById('drawerBackdrop')?.classList.add('hidden'); showWhatsNew(true); });
+  document.getElementById('pinSettingsBtn')?.addEventListener('click',()=>document.getElementById('profileModal')?.close());
+  document.getElementById('whatsNewBtn')?.addEventListener('click',()=>{ closeSideMenu(); showWhatsNew(true); });
   document.getElementById('updateDone')?.addEventListener('click',()=>{
     localStorage.setItem(RELEASE_KEY,VERSION);
     document.getElementById('updateModal')?.close();
