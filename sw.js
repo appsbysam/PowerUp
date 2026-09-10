@@ -1,4 +1,4 @@
-const VERSION='0.4.01';
+const VERSION='0.4.02';
 const CACHE=`schedule-plus-v${VERSION}`;
 const CORE=['./','./index.html','./styles.css','./maps-autocomplete.css','./app.js','./maps-config.js','./maps-autocomplete.js','./supabase.js','./version.js','./manifest.webmanifest','./assets/powerup-logo.png','./assets/icons/icon.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>`${u}${u.includes('?')?'&':'?'}v=${VERSION}`))))});
