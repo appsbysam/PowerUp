@@ -38,38 +38,56 @@
   }
   function errorText(error) {
     const raw = String(error?.code || error?.message || 'unknown error');
-    return raw.replace(/AIza[\w-]+/g, '[key hidden]').slice(0, 120);
+    return raw.replace(/AIza[\w-]+/g, '[key hidden]').slice(0, 160);
   }
 
-  function loadGoogleMaps() {
-    if (window.google?.maps?.importLibrary) return Promise.resolve();
-    if (window.__schedulePlusGoogleMapsPromise) return window.__schedulePlusGoogleMapsPromise;
-    window.__schedulePlusGoogleMapsPromise = new Promise((resolve, reject) => {
-      if (typeof GOOGLE_MAPS_API_KEY === 'undefined' || !GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_API_KEY')) {
-        reject(new Error('API key not configured'));
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places&v=weekly&loading=async&language=en&region=AU`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Maps JavaScript API failed to load'));
-      document.head.appendChild(script);
+  function installGoogleBootstrap() {
+    if (window.google?.maps?.importLibrary) return;
+    if (typeof GOOGLE_MAPS_API_KEY === 'undefined' || !GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_API_KEY')) {
+      throw new Error('API key not configured');
+    }
+
+    ((g) => {
+      let h, a, k;
+      const p = 'The Google Maps JavaScript API';
+      const c = 'google';
+      const l = 'importLibrary';
+      const q = '__ib__';
+      const m = document;
+      let b = window;
+      b = b[c] || (b[c] = {});
+      const d = b.maps || (b.maps = {});
+      const r = new Set();
+      const e = new URLSearchParams();
+      const u = () => h || (h = new Promise(async (f, n) => {
+        await (a = m.createElement('script'));
+        e.set('libraries', [...r] + '');
+        for (k in g) e.set(k.replace(/[A-Z]/g, t => '_' + t[0].toLowerCase()), g[k]);
+        e.set('callback', c + '.maps.' + q);
+        a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+        d[q] = f;
+        a.onerror = () => h = n(Error(p + ' could not load.'));
+        a.nonce = m.querySelector('script[nonce]')?.nonce || '';
+        m.head.append(a);
+      }));
+      d[l] ? console.warn(p + ' only loads once. Ignoring:', g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
+    })({
+      key: GOOGLE_MAPS_API_KEY,
+      v: 'weekly',
+      language: 'en',
+      region: 'AU'
     });
-    return window.__schedulePlusGoogleMapsPromise;
   }
 
   let autocomplete = null;
 
   async function initialiseAutocomplete() {
     try {
-      await loadGoogleMaps();
+      installGoogleBootstrap();
       const places = await google.maps.importLibrary('places');
       const PlaceAutocompleteElement = places?.PlaceAutocompleteElement;
       if (!PlaceAutocompleteElement) throw new Error('PlaceAutocompleteElement unavailable');
 
-      // Use Google's documented no-argument constructor, then assign options.
       autocomplete = new PlaceAutocompleteElement();
       autocomplete.id = 'googleAddressAutocomplete';
       autocomplete.className = 'google-address-autocomplete';
