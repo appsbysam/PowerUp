@@ -1,9 +1,19 @@
-const APP_VERSION='0.4.12';
+const APP_VERSION='0.4.13';
 console.info(`Schedule+ v${APP_VERSION}`);
 
 (() => {
   const viewport = document.querySelector('meta[name="viewport"]');
   if (viewport) viewport.setAttribute('content','width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+
+  const manifest = document.querySelector('link[rel="manifest"]');
+  if (manifest) manifest.href = `manifest.webmanifest?v=${APP_VERSION}`;
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon) {
+    favicon.href = `assets/powerup-logo.png?v=${APP_VERSION}`;
+    favicon.type = 'image/png';
+  }
+  const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+  if (appleIcon) appleIcon.href = `assets/powerup-logo.png?v=${APP_VERSION}`;
 
   const style = document.createElement('style');
   style.textContent = `
@@ -67,6 +77,6 @@ console.info(`Schedule+ v${APP_VERSION}`);
     }
 
     const notes = document.querySelector('#updateModal .update-notes');
-    if (notes) notes.innerHTML = '<li>Login and PIN screens are now fixed to the phone screen instead of sliding up and down.</li><li>Pinch-to-zoom is disabled throughout Schedule+ while normal vertical scrolling remains available.</li><li>If a PIN is set, reopening the app after it has been in the background will ask for the PIN instead of requiring the full login again.</li><li>Added a Notifications option to User profile, ready for notification functionality to be connected later.</li>';
+    if (notes) notes.innerHTML = '<li>Installed app branding now uses the PowerUp logo instead of the lightning-bolt placeholder icon.</li><li>The browser favicon and Apple touch icon now use the same PowerUp branding.</li><li>Login and PIN screens remain fixed to the phone screen, pinch-to-zoom remains disabled, and the PIN re-lock behaviour is unchanged.</li><li>The Notifications option remains available in User profile for later functionality.</li>';
   });
 })();
