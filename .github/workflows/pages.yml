@@ -1,9 +1,11 @@
-name: Deploy Schedule+ to GitHub Pages
+name: Deploy PowerUp from SchedulePlus master
 
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read
@@ -12,7 +14,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -21,16 +23,36 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout PowerUp deployment wrapper
         uses: actions/checkout@v4
+        with:
+          path: wrapper
+
+      - name: Checkout SchedulePlus master
+        uses: actions/checkout@v4
+        with:
+          repository: appsbysam/SchedulePlus
+          ref: main
+          path: site
+
+      - name: Apply PowerUp deployment settings
+        shell: bash
+        run: |
+          mkdir -p site/assets
+          cp wrapper/assets/powerup-logo.png site/assets/powerup-logo.png
+          sed -i "s|const AUTH_REDIRECT_URL = 'https://appsbysam.github.io/SchedulePlus/';|const AUTH_REDIRECT_URL = 'https://appsbysam.github.io/PowerUp/';|" site/app.js
+          sed -i "s|DEFAULT_LOGO='assets/icons/icon.svg'|DEFAULT_LOGO='assets/powerup-logo.png'|" site/business.js
+          sed -i "s|--tenant-accent','#6b7280'|--tenant-accent','#ff00a8'|" site/business.js
+          sed -i "s|--tenant-secondary','#9ca3af'|--tenant-secondary','#0d9488'|" site/business.js
+          rm -rf site/.git
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload site
+      - name: Upload PowerUp site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
