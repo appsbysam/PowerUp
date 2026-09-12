@@ -1,1 +1,1 @@
-Schedule+ master sync trigger: 0.7.8
+Schedule+ master sync trigger: 0.7.9
